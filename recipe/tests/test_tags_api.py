@@ -116,5 +116,52 @@ class PrivateTagsAPITests(TestCase):
 
         self.assertFalse(tags.exists())
 
+    def test_filter_ingredients_assigned_to_recipe(self):
+        """Test listing ingredients to those assigned to recipe"""
 
+        t1 = Tag.objects.create(user=self.user, name='Vegan')
+        t2 = Tag.objects.create(user=self.user, name='Vegetarian')
 
+        recipe = Recipe.objects.create(
+            title='Apple Pie',
+            user=self.user,
+            time_minutes=30,
+            price='5.5',
+        )
+
+        recipe.tags.add(t2)
+        res = self.client.get(TAGS_URL, {'assigned_only': 1})
+
+        s1 = TagSerializer(t1)
+        s2 = TagSerializer(t2)
+
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s1.data, res.data)
+
+    def test_filtered_ingredients_unique(self):
+        """Test filtered ingredients return a unique value"""
+
+        tag = Tag.objects.create(user=self.user, name='Sour')
+
+        Tag.objects.create(user=self.user, name='Chickpea')
+
+        r1 = Recipe.objects.create(
+            title='Scrambled Eggs',
+            user=self.user,
+            time_minutes=30,
+            price='5.5',
+        )
+
+        r2 = Recipe.objects.create(
+            title='Boiled Eggs',
+            user=self.user,
+            time_minutes=30,
+            price='5.5',
+        )
+
+        r1.tags.add(tag)
+        r2.tags.add(tag)
+
+        res = self.client.get(TAGS_URL, {'assigned_only': 1})
+
+        self.assertEqual(len(res.data), 1)

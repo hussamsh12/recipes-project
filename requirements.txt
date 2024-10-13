@@ -1,3 +1,4 @@
 django
 django-rest-framework
 drf_spectacular
+Pillow
